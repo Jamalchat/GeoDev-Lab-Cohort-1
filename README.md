@@ -71,3 +71,8 @@ Before performing spatial operations, run the five standard quality checks on th
 
 * **File Path**: `data/processed/delta_state_analysis_ready.gpkg`.
 * **Format**: **GeoPackage (** **.gpkg** **)**, stored as a single self-contained file that retains coordinate reference metadata reliably without sidecar file issues.
+
+
+# Month 2: Preparation of environment, and early Python
+## Week 5
+* I setup pthon. VS Code and terminal. I created a hello.py script, and it runs.
