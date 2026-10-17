@@ -410,12 +410,3 @@ Sabo is small
 Mokola is large
 ```
 
----
-
-## Summary Checklist for Assignment Submission
-
-1. **`wards.csv`**: Contains header `ward,area_km2` and 4 data rows.
-2. **`analyse.py`**: Reads `wards.csv`, converts area to `float`, classifies wards, and prints outputs.
-3. **`screenshots/week7.png`**: Terminal screenshot showing `uv run analyse.py` execution.
-4. **`README.md`**: Updated under Month 2 heading with Week 7 summary text.
-
