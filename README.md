@@ -410,3 +410,185 @@ Sabo is small
 Mokola is large
 ```
 
+# Week 8
+
+## inspect_data.py summarises states.csv into the smallest, largest, and number of states
+
+This document provides a detailed step-by-step summary and breakdown of **Week 8** in the GeoDev Lab Cohort 1 program. Week 8 marks the transition from basic synthetic examples to inspecting and cleaning real-world spatial datasets gathered in Month 1 using Python, `csv.DictReader`, dictionaries, and `uv`.
+
+---
+
+## Overview & Core Philosophy
+
+* **Instructor**: Williams Adajan (GeoDev Lab Africa)
+* **Milestone**: "Where Month 1 and Month 2 meet"—pointing the six core Python programming concepts at real messy GIS data.
+* **Golden Debugging Habit**: Always read the last line of the error traceback first, and use `print()` statements to inspect variables at runtime whenever logic produces unexpected values.
+* **Scratchpad vs. Script**: `l.py` / `learn.py` serves as the practice scratchpad, while `inspect_data.py` and your dataset CSV form the final submitted program.
+
+---
+
+## Part 1: Core Theoretical Concepts
+
+### 1. `print()` vs. `return` (The Single Most Common Beginner Mistake)
+Functions can display information or pass data back to the calling program, but they behave fundamentally differently in memory:
+
+* **`print()`**: Displays a value on the screen/terminal for visual inspection. It does **not** return a value to memory. Assigning the result of a printing function to a variable stores `None`.
+* **`return`**: Sends a calculated result back to the caller, allowing it to be stored in a variable and used in downstream calculations.
+* **The `NoneType` Error**: Attempting math on a variable assigned to a function that only printed results in a `TypeError: unsupported operand type(s) for +: 'NoneType' and 'int'`.
+
+```python
+# Function with print (returns None)
+def with_print(x):
+    print(x * 100)
+
+a = with_print(5)  # Prints 500, but 'a' holds None!
+
+# Function with return (saves to memory)
+def with_return(x):
+    return x * 100
+
+b = with_return(5) # 'b' holds 500
+print(b + 1)       # Outputs: 501
+```
+
+---
+
+### 2. Reading CSV Files: String Splitting vs. `csv.DictReader`
+While `split(",")` works for basic, uniform CSVs, real data requires robust parsing tools:
+
+* **Problem with `split(",")`**: If a cell contains a comma inside quotes (e.g., `"Ibadan, Oyo"`), `split(",")` splits that single cell into two separate elements, corrupting column alignments without throwing an explicit syntax error.
+* **Solution (`csv.DictReader`)**: Reads each row as a Python dictionary. Values are accessed by their exact column header name (e.g., `row["area_km2"]`), ignoring column ordering shifts and respecting quoted text commas.
+
+---
+
+### 3. Handling Invisible Character Markers (`encoding="utf-8-sig"`)
+External software like Microsoft Excel or QGIS frequently embeds an invisible Byte Order Mark (BOM) (`\ufeff`) at the beginning of exported CSV files.
+
+* **Symptom**: Python raises a `KeyError: 'ward'` even though the `'ward'` header is visually visible in the CSV editor.
+* **Fix**: Always open CSV files using `encoding="utf-8-sig"`. This instructs Python to detect and automatically strip invisible BOM markers:
+
+```python
+import csv
+
+with open("Places.csv", encoding="utf-8-sig") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(row["ward"])
+```
+
+---
+
+### 4. Working with Dictionaries
+Dictionaries store data using descriptive **key-value pairs** inside curly braces `{}`.
+
+* **Lists vs. Dictionaries**: Lists hold multiple ordered items accessed by integer positions (`list[0]`). Dictionaries hold properties of an entity accessed by descriptive string labels (`dict["area"]`).
+* **Accessing & Modifying**:
+  * Read value: `ward["area"]`.
+  * Add or update key: `ward["population"] = 45000`.
+  * Iterating keys/values: `for key, value in ward.items():`.
+* **`KeyError`**: Accessing a non-existent key raises a `KeyError`.
+
+---
+
+### 5. Working with JSON Data
+JSON (JavaScript Object Notation) is a semi-structured hierarchical data format widely used for web APIs and spatial GeoJSON files.
+
+* **Reading JSON**: Use `import json` and `json.load(f)`. Python automatically parses JSON objects into nested dictionaries and lists.
+* **Numeric Integrity**: Unlike CSV files where all cell values arrive as strings (`str`), JSON preserves native numbers (`int`, `float`) without requiring manual type casting.
+
+---
+
+### 6. Logical Bugs & Debugging with `print()`
+Logical bugs occur when code executes cleanly without errors, but produces mathematically incorrect results.
+
+* **Common Pitfall**: Resetting accumulator variables (like `total = 0`) *inside* a `for` loop instead of *outside*, causing only the last loop iteration's value to survive.
+* **Debugging Strategy**: Place temporary `print()` statements inside loops to monitor variable progression at each step.
+
+---
+
+### 7. Data Cleaning: Handling Messy & Missing Data
+Real data contains whitespace padding, empty cells, `"NA"` strings, and thousands-separator commas.
+
+* **Stripping Whitespace**: Use `.strip()` to clean leading and trailing spaces from text inputs.
+* **Removing Commas**: Numbers like `"5,580,894"` fail during `float()` conversion. Use `.replace(",", "")` first.
+* **Handling Empty Cells & `"NA"`**: Attempting `float("")` or `float("NA")` raises a `ValueError` [42]. Use `if not raw_val or raw_val == "NA": continue` to log and skip invalid cells gracefully.
+* **Honest Data Reporting**: Track and report the count of skipped rows so stakeholders know how many rows were excluded.
+
+---
+
+## Part 2: Hands-On Practical (`inspect_data.py`)
+
+In Part 2, a complete data inspection script is constructed to read a CSV dataset, clean numeric columns, skip missing entries, and calculate summary metrics using dictionaries.
+
+### Step 1: Naming the Script (`inspect_data.py` vs `inspect.py`)
+* **Crucial Rule**: Name the script **`inspect_data.py`**, **never `inspect.py`**.
+* **Reason**: Python contains a built-in standard library module named `inspect`. Creating a local file named `inspect.py` causes module shadowing (a name collision), breaking Python's internal imports.
+
+---
+
+### Step 2: Complete Code Implementation (`inspect_data.py`)
+
+Below is the complete, clean script structure for reading a dataset, cleaning numeric values, and returning summary dictionaries:
+
+```python
+import csv
+
+def inspect_column(file_name, column_name):
+    """
+    Opens a CSV file, cleans numeric values for a specified column,
+    skips empty/missing cells, and returns a summary dictionary.
+    """
+    values = []
+    skipped_count = 0
+
+    with open(file_name, encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        
+        for row in reader:
+            # Extract raw string value and strip whitespace
+            raw_val = row[column_name].strip()
+
+            # Skip empty cells or 'NA' entries
+            if not raw_val or raw_val == "NA":
+                skipped_count += 1
+                continue
+
+            # Remove thousands-separator commas and convert to float
+            clean_val = float(raw_val.replace(",", ""))
+            values.append(clean_val)
+
+    # Return summary dictionary
+    return {
+        "count": len(values),
+        "min": min(values),
+        "max": max(values),
+        "avg": round(sum(values) / len(values), 2),
+        "skipped": skipped_count
+    }
+
+# Execute function for two distinct numeric columns
+col1_summary = inspect_column("states.csv", "area_km2")
+col2_summary = inspect_column("states.csv", "lgas")
+
+# Print summary dictionaries to terminal
+print("Column 1 Summary:", col1_summary)
+print("Column 2 Summary:", col2_summary)
+```
+
+---
+
+### Step 3: Terminal Execution & Verification
+
+Run the inspection script inside your project environment using `uv`:
+
+```bash
+uv run inspect_data.py
+```
+
+**Expected Terminal Output**:
+```text
+Column 1 Summary: {'count': 10, 'min': 5.7, 'max': 12.4, 'avg': 8.88, 'skipped': 0}
+Column 2 Summary: {'count': 10, 'min': 150.0, 'max': 450.0, 'avg': 285.5, 'skipped': 0}
+```
+
+---
