@@ -592,3 +592,165 @@ Column 2 Summary: {'count': 10, 'min': 150.0, 'max': 450.0, 'avg': 285.5, 'skipp
 ```
 
 ---
+# Week 9 & Month 2 Capstone Practical Guide
+
+## summary.py refactors data inspection into four clean functions for depth and yield
+
+This guide provides a comprehensive, step-by-step walkthrough for completing the **Week 9 Capstone (Code Refactoring and Month 2 Consolidation)** in the GeoDev Lab Cohort 1 program.
+
+---
+
+## 1. What is Code Refactoring?
+
+* **Definition**: Refactoring means improving the internal structure, readability, and organization of working code without changing what it does.
+* **The Iron Rule**: Run the script before refactoring and record the output. Refactor the script and run it again. **The output must be identical**. If the output changes, you did not refactor—you broke something.
+* **Why Refactor?**: 
+  1. Replaces repetitive, copy-pasted blocks with reusable modular functions.
+  2. Isolates tasks so bugs are easy to find and fix.
+  3. Uses clear, descriptive variable names (e.g., `row` instead of `r`, `values` instead of `vaws`).
+  4. Prepares the codebase for Month 3, where code complexity increases.
+
+---
+
+## 2. Script Architecture: `summary.py`
+
+In Week 8, data reading, cleaning, and summarization were bundled inside a single function. In Week 9, `summary.py` refactors this into **three single-purpose functions** coordinated by an overarching runner function (**`summarise_all`**):
+
+1. **`read_rows(file_name)`**: Opens the CSV file safely with `encoding="utf-8-sig"` and returns all rows as a list of dictionaries via `csv.DictReader`.
+2. **`clean_values(rows, column)`**: Extracts cell values for a specific column, strips whitespace, skips empty or `"NA"` cells with `continue`, removes commas, converts numbers to `float`, and returns a clean list of numbers.
+3. **`summarise(values)`**: Takes a list of numeric values and returns a dictionary with summary statistics (`count`, `smallest`, `largest`, `average`).
+   * **Defensive Edge-Case Check**: If `len(values) == 0`, it safely returns `{"count": 0, "smallest": None, "largest": None, "average": None}` to prevent `min()`, `max()`, and division-by-zero crashes.
+4. **`summarise_all(file_name, columns)`**: Reads the file once, loops through the provided column names, cleans each column's values, summarizes them, and stores the results in a nested dictionary keyed by column name.
+
+---
+
+## 3. Complete Source Code: `summary.py`
+
+```python
+import csv
+
+def read_rows(file_name):
+    """Opens a CSV file and returns all rows as dictionaries."""
+    with open(file_name, encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        return list(reader)
+
+def clean_values(rows, column):
+    """Extracts, cleans, and converts a column's values into floats."""
+    values = []
+    for row in rows:
+        raw_val = row[column].strip()
+        # Skip empty cells or NA values
+        if not raw_val or raw_val == "NA":
+            continue
+        # Remove commas and convert to float
+        clean_num = float(raw_val.replace(",", ""))
+        values.append(clean_num)
+    return values
+
+def summarise(values):
+    """Calculates count, smallest, largest, and average for a list of numbers."""
+    if len(values) == 0:
+        return {
+            "count": 0,
+            "smallest": None,
+            "largest": None,
+            "average": None
+        }
+    
+    return {
+        "count": len(values),
+        "smallest": min(values),
+        "largest": max(values),
+        "average": round(sum(values) / len(values), 2)
+    }
+
+def summarise_all(file_name, columns):
+    """Coordinates reading, cleaning, and summarising across multiple columns."""
+    rows = read_rows(file_name)
+    report = {}
+    for column in columns:
+        cleaned = clean_values(rows, column)
+        report[column] = summarise(cleaned)
+    return report
+
+# --- Execution on Your Month 1 Data ---
+# Replace 'mydata.csv' and the column names with your actual dataset details
+file_path = "mydata.csv"
+target_columns = ["depth", "yield"]  # Use at least two numeric columns from your data
+
+# Generate summary report dictionary
+report = summarise_all(file_path, target_columns)
+
+# Print one formatted line per column
+for column, stats in report.items():
+    print(column, stats)
+```
+
+---
+
+## 4. Step-by-Step Execution & Deliverables
+
+### Step 1: Run the Script with `uv`
+In your VS Code terminal, run:
+```bash
+uv run summary.py
+```
+**Expected Terminal Output**:
+```text
+depth {'count': 120, 'smallest': 14.5, 'largest': 95.0, 'average': 48.25}
+yield {'count': 120, 'smallest': 0.8, 'largest': 12.4, 'average': 4.15}
+```
+
+### Step 2: Capture Screenshot (`week9.png`)
+* Take a clear screenshot of your VS Code window showing the terminal after running `uv run summary.py`.
+* Ensure the printed summary lines with column names, counts, smallest, largest, and average are visible.
+* Save this image file as **`week9.png`** inside your repository's **`screenshots/`** directory.
+
+### Step 3: Update `README.md`
+Open the root `README.md` file in your repository. Under your **Month 2** heading, add the Week 9 line and your **Month 2 reflection** section:
+
+```markdown
+
+# Month 2 Capstone Practical Guide
+
+## Month 2: development environment and early Python
+
+Week 5: set up Python, VS Code and the terminal. hello.py runs.
+Week 6: set up the project with uv and add pandas. check.py prints the pandas version.
+Week 7: analyse.py reads wards.csv, converts each area and classifies each ward.
+Week 8: inspect_data.py summarises depth and yield in my Oyo borehole data.
+Week 9: summary.py refactors data inspection into four clean functions for depth and yield.
+
+### Month 2 reflection
+This month, the difference between printing and returning values finally clicked for me; seeing how a function that only prints returns `None` made debugging much clearer. Writing list comprehensions and coordinating nested loops still feels slightly fuzzy, especially when navigating multi-step dictionary lookups. Running the Month 2 capstone on my borehole dataset reveals that the average well depth across the surveyed locations is approximately 48 meters, with yields ranging from low hand-pump levels to high-capacity municipal boreholes.
+```
+*(Customize the reflection sentences to describe your own learning experience and actual dataset findings).*
+
+---
+
+## 5. Repository Structure & Final Submission
+
+### Final GitHub Repository Structure:
+```text
+your-month1-repository/
+├── pyproject.toml                 # From Week 6
+├── uv.lock                        # From Week 6
+├── check.py                       # From Week 6
+├── wards.csv                      # From Week 7
+├── analyse.py                     # From Week 7
+├── mydata.csv                     # Month 1 / Week 8 dataset
+├── inspect_data.py                # From Week 8
+├── summary.py                     # Week 9 Capstone script
+├── hello.py                       # From Week 5
+├── README.md                      # Updated with Week 9 & Month 2 reflection
+└── screenshots/
+    ├── week5.png
+    ├── week6.png
+    ├── week7.png
+    ├── week8.png
+    └── week9.png                  # Week 9 terminal screenshot
+```
+
+
+
