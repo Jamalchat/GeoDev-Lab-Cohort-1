@@ -592,7 +592,7 @@ Column 2 Summary: {'count': 10, 'min': 150.0, 'max': 450.0, 'avg': 285.5, 'skipp
 ```
 
 ---
-# Week 9 & Month 2 Capstone Practical Guide
+# Week 9
 
 ## summary.py refactors data inspection into four clean functions for depth and yield
 
@@ -602,7 +602,7 @@ This guide provides a comprehensive, step-by-step walkthrough for completing the
 
 ## 1. What is Code Refactoring?
 
-* **Definition**: Refactoring means improving the internal structure, readability, and organization of working code without changing what it does.
+* **Definition**: Refactoring means improving the internal structure, readability, and organisation of working code without changing what it does.
 * **The Iron Rule**: Run the script before refactoring and record the output. Refactor the script and run it again. **The output must be identical**. If the output changes, you did not refactor—you broke something.
 * **Why Refactor?**: 
   1. Replaces repetitive, copy-pasted blocks with reusable modular functions.
@@ -710,7 +710,6 @@ yield {'count': 120, 'smallest': 0.8, 'largest': 12.4, 'average': 4.15}
 ### Step 3: Update `README.md`
 Open the root `README.md` file in your repository. Under your **Month 2** heading, add the Week 9 line and your **Month 2 reflection** section:
 
-```markdown
 
 # Month 2 Capstone Practical Guide
 
