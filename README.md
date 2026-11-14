@@ -751,5 +751,135 @@ your-month1-repository/
     └── week9.png                  # Week 9 terminal screenshot
 ```
 
+# Month 3: geospatial Python and automation 
+## Week 10: GeoPandas. Loaded, checked, joined and mapped my Health Facilities in ibadan North in code.
 
+# Practical Guide
+
+This guide provides a comprehensive breakdown of **Week 10 (GeoPandas, Layers as Tables, and Automated Mapping)** in Month 3 of the GeoDev Lab Cohort 1 program [1, 18, 19]. Week 10 transitions from GUI-based GIS clicking (Month 1) and core Python scripting (Month 2) to programmatic geospatial manipulation using GeoPandas, Pandas, and Matplotlib.
+
+---
+
+## 1 Overview &amp; Workflow Objectives
+
+* **Core Goal**: Perform end-to-end vector GIS operations entirely in Python code—loading spatial data, inspecting layer properties, converting coordinate tables into point features, performing robust attribute joins, and rendering map outputs.
+* **Key Principle**: Code forms a repeatable spatial pipeline that can be executed on any dataset in seconds without manual clicking.
+* **Directory Rule**: Work is organized inside `month-03/week-10/` within your existing GitHub repository from Months 1 and 2. Do **not** create a new repository [user prompt].
+
+---
+
+## 2 Theoretical Concepts &amp; Core Syntax
+
+### A. Pandas vs. GeoPandas
+
+* **Pandas (`pd`)**: Teaches Python how to handle tabular data (`DataFrame`).
+* **GeoPandas (`gpd`)**: Extends Pandas to handle spatial geometries (`GeoDataFrame`). Includes a special `geometry` column containing points, lines, or polygons.
+
+### B. Reading Spatial &amp; Tabular Files
+
+* **CSV Files**: `pd.read_csv("data/raw/world_population.csv")`.
+* **GeoPackage Layers**: `gpd.read_file("data/processed/wards.gpkg", layer="wards")`. GeoPackage (`.gpkg`) is preferred over Shapefiles because it avoids 10-character column name truncations, has no 2GB file limit, and stores multiple layers in a single file.
+
+### C. Layer Inspection Checklist
+
+Before running spatial analysis, run these standard diagnostic checks:
+
+1. **`.head()`**: View top rows.
+2. **`.shape`**: Return `(rows, columns)` tuple.
+3. **`list(df.columns)`**: List all field names.
+4. **`.dtypes`**: Verify field data types (e.g., numeric vs. string object).
+5. **`.geometry.type.value_counts()`**: Inspect spatial geometry types (Polygon, Point, etc.).
+6. **`.crs`**: Check the Coordinate Reference System (e.g., `EPSG:4326`).
+7. **`.total_bounds`**: Check spatial extent bounding box `[xmin, ymin, xmax, ymax]` to catch coordinate swap issues.
+
+### D. Converting CSV Coordinates to Points (`gpd.points_from_xy`)
+
+Converting lat/long CSV columns into a spatial `GeoDataFrame`:
+
+```
+import geopandas as gpd
+import pandas as pd
+
+df = pd.read_csv("data/raw/health_facilities.csv")
+gdf = gpd.GeoDataFrame(
+    df,
+    geometry=gpd.points_from_xy(df["longitude"], df["latitude"]),
+    crs="EPSG:4326"
+)
+gdf.to_file("data/processed/facilities.gpkg", layer="facilities")
+
+```
+
+### E. Robust Attribute Joins &amp; String Normalization
+
+Attribute joins can fail silently due to case differences, trailing spaces, or hyphenation [33, 38, 46]. Always clean join keys on both tables before merging:
+
+```
+def clean_name(name):
+    if not name:
+        return ""
+    return name.strip().upper().replace("-", " ")
+
+# Apply cleaning function to create standardized join keys
+words_gdf["join_key"] = words_gdf["word_name"].apply(clean_name)
+pop_df["join_key"] = pop_df["word"].apply(clean_name)
+
+# Merge tables
+joined = words_gdf.merge(pop_df, on="join_key", how="left")
+
+# Verify match counts
+match_count = joined["population_2024"].notna().sum()
+print(f"Matched: {match_count} of {len(words_gdf)}")
+
+```
+
+### F. Programmatic Mapping with Matplotlib
+
+Render static maps using Matplotlib subplots and export clean PNG images:
+
+```
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(7, 8))
+words_gdf.plot(ax=ax, color="#E6F2F3", edgecolor="#037E8A")
+facilities_gdf.plot(ax=ax, color="#094923", markersize=18)
+
+ax.set_title("Health Facilities in Ibadan North")
+ax.set_axis_off()
+
+plt.savefig("facilities_map.png", dpi=150, bbox_inches="tight")
+
+```
+
+---
+
+## 3 Directory Layout &amp; File Checklist
+
+Your repository should be structured as follows:
+
+```
+your-repository/
+├── README.md                      # Updated with Month 3 heading &amp; Week 10 line
+├── data/                          # Small input/output files read by challenge scripts
+│   ├── raw/
+│   └── processed/
+└── month-03/
+    └── week-10/
+        ├── explore_pandas.py      # Guided script 1: Pandas inspection
+        ├── filter_sort.py         # Guided script 2: Filtering, sorting, total calculations
+        ├── explore_layer.py       # Guided script 3: GeoPandas layer checks
+        ├── geom_props.py          # Guided script 4: Area, length, centroids
+        ├── csv_to_points.py       # Guided script 5: Lat/Long CSV to point GeoPackage
+        ├── join_population.py     # Guided script 6: Cleaning and merging tables
+        ├── make_map.py            # Guided script 7: Layer plotting &amp; facilities_map.png
+        ├── save_outputs.py        # Guided script 8: Saving GPKG layer &amp; wards_table.csv
+        ├── facilities_map.png     # Guided output map
+        ├── wards_table.csv        # Guided output CSV table
+        ├── my_explore.py          # Challenge script 1: Inspecting personal layer
+        ├── my_points.py           # Challenge script 2: Personal points conversion
+        ├── my_join.py             # Challenge script 3: Personal layer attribute join
+        ├── my_map.png             # Challenge output map
+        └── README.md              # Week 10 specific reflection/documentation
+
+```
 
